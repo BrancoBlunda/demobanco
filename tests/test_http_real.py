@@ -38,3 +38,20 @@ def test_fraude_llama_a_listas_por_la_red(servidor):
     assert respuesta.status_code == 200
     assert respuesta.json()["motivos"] == ["destino_observado"]
     assert respuesta.json()["listas"]["status"] == 200
+
+
+def test_transferencia_viaja_por_la_red(servidor):
+    respuesta = httpx.post(
+        f"{servidor}/v1/pagos/transferencias",
+        json={
+            "origen": "DEMO-1001",
+            "destino": "DEMO-2001",
+            "monto": 80_000,
+            "canal": "home_banking",
+            "referencia": "Factura 0001",
+            "clave_idempotencia": "red-1",
+        },
+    )
+    assert respuesta.status_code == 201
+    traza = httpx.get(f"{servidor}{respuesta.json()['traza']}").json()
+    assert [s["estado"] for s in traza["saltos"]] == ["ok"] * 5
