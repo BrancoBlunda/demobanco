@@ -28,6 +28,10 @@ source .venv/bin/activate
 uvicorn riel.main:app --env-file .env --port 8000
 ```
 
+Los datos viven en un archivo SQLite local (`riel.db`, o el que indique `RIEL_DB`). Al arrancar,
+si la base está vacía, se cargan seis cuentas DEMO con titulares ficticios. Para volver a la
+semilla, frená la app y borrá `riel.db`.
+
 Chequeo de salud:
 
 ```bash
