@@ -21,6 +21,30 @@ CREATE TABLE IF NOT EXISTS asientos (
     saldo_destino INTEGER NOT NULL,
     creado TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
+CREATE TABLE IF NOT EXISTS transferencias (
+    orden INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT NOT NULL UNIQUE,
+    clave_idempotencia TEXT UNIQUE,
+    origen TEXT,
+    destino TEXT,
+    monto INTEGER,
+    canal TEXT,
+    referencia TEXT,
+    estado TEXT NOT NULL,
+    motivos TEXT NOT NULL DEFAULT '[]',
+    traza TEXT NOT NULL DEFAULT '[]',
+    creada TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+CREATE TABLE IF NOT EXISTS bitacora (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    transferencia_id TEXT NOT NULL,
+    evento TEXT NOT NULL,
+    origen TEXT NOT NULL,
+    destino TEXT NOT NULL,
+    monto INTEGER,
+    motivos TEXT NOT NULL,
+    creado TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
 """
 
 
