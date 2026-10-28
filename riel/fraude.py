@@ -1,11 +1,15 @@
 """API de fraude: decide si una transferencia se retiene y por qué."""
 
+import os
 from dataclasses import asdict, dataclass
 
-from fastapi import APIRouter
+import httpx
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, StrictInt
 
 from riel.config import UMBRAL_MONTO_ALTO
+from riel.interno import cliente_interno
+from riel.listas import PATH_OBSERVADAS
 
 router = APIRouter()
 
@@ -47,6 +51,28 @@ def evaluar(solicitud: SolicitudFraude, cuentas_observadas: frozenset[str] | Non
     return Evaluacion(decision="retenida" if motivos else "aprobada", motivos=motivos)
 
 
+def token_saliente() -> str:
+    return os.environ.get("LISTAS_API_TOKEN", "")
+
+
+async def consultar_listas(request: Request) -> tuple[frozenset[str] | None, int | None]:
+    """Llama por HTTP a la API de listas. Devuelve (observadas o None, status HTTP)."""
+    try:
+        async with cliente_interno(request) as http:
+            respuesta = await http.get(
+                PATH_OBSERVADAS, headers={"Authorization": f"Bearer {token_saliente()}"}
+            )
+    except httpx.HTTPError:
+        return None, None
+    if respuesta.status_code != 200:
+        return None, respuesta.status_code
+    return frozenset(respuesta.json()["cuentas"]), respuesta.status_code
+
+
 @router.post("/v1/fraude/evaluar", tags=["interna"])
-def post_evaluar(solicitud: SolicitudFraude) -> dict:
-    return asdict(evaluar(solicitud, cuentas_observadas=frozenset()))
+async def post_evaluar(solicitud: SolicitudFraude, request: Request) -> dict:
+    observadas, status_listas = await consultar_listas(request)
+    return {
+        **asdict(evaluar(solicitud, observadas)),
+        "listas": {"metodo": "GET", "path": PATH_OBSERVADAS, "status": status_listas},
+    }
