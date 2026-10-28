@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from riel import libro
+from riel import fraude, libro
 from riel.base import Base
 from riel.semilla import sembrar_si_vacia
 
@@ -29,6 +29,7 @@ def create_app(ruta_base: str | None = None) -> FastAPI:
         return {"estado": "ok", "servicio": "riel"}
 
     app.include_router(libro.router)
+    app.include_router(fraude.router)
     return app
 
 
