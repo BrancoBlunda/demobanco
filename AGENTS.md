@@ -15,6 +15,8 @@ riel/            paquete de la app (un solo proceso FastAPI)
   fraude.py      reglas de fraude y POST /v1/fraude/evaluar (interna); consulta listas por HTTP
   listas.py      GET /v1/listas/observadas (interna, exige Bearer LISTAS_API_TOKEN)
   interno.py     cliente HTTP entre APIs del mismo proceso
+  pagos.py       POST /v1/pagos/transferencias, GET .../{id}/traza, GET /v1/transferencias
+  bitacora.py    bitácora de eventos (solo últimos 4 caracteres de cada cuenta)
 tests/           tests de pytest
 .agents/skills/  skills del repo (probar-riel: cómo probar de punta a punta)
 ```
@@ -66,6 +68,16 @@ saldos negativos).
 
 Semilla: al arrancar, si la base está vacía, se cargan las cuentas DEMO-1001, DEMO-1002,
 DEMO-1003, DEMO-2001, DEMO-2002 y DEMO-9001 (titulares ficticios).
+
+Pagos responde 201 `posteada`, 202 `retenida`, 422 `rechazada` y 200 en un reintento
+(`reintento: true`). Rechazos adicionales: `origen_inexistente`, `destino_inexistente`,
+`referencia_invalida`, `clave_invalida` y, desde el libro, `saldo_insuficiente`. Un rechazo no
+consume la `clave_idempotencia`. Si fraude no responde, la transferencia se retiene con
+`fraude_no_disponible`.
+
+Traza: saltos en orden `origen`, `api_pagos`, `fraude`, `libro`, `destino`. Cada salto tiene
+`nodo`, `estado` (`ok`, `retenida`, `rechazada`, `omitido`), `metodo`, `path`, `status` y
+`recorte`. Si fraude retiene, `libro` y `destino` quedan `omitido`.
 
 Bitácora: guarda solo los últimos 4 caracteres de origen y de destino.
 
