@@ -1,0 +1,51 @@
+# Riel
+
+Riel es un **banco ficticio** de demostración. Una sola pantalla muestra cómo viaja una
+transferencia entre APIs y cómo se frena si fraude la retiene.
+
+> Los datos son de demostración. **No es un banco real.** No hay login, no hay home banking de
+> verdad y ninguna cuenta existe fuera de esta app.
+
+## Requisitos
+
+- Python 3.10 o superior.
+
+## Instalar
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+cp .env.example .env
+```
+
+`.env` es local y no se versiona. Completá `LISTAS_API_TOKEN` con un valor que elijas vos.
+
+## Correr
+
+```bash
+source .venv/bin/activate
+uvicorn riel.main:app --env-file .env --port 8000
+```
+
+Chequeo de salud:
+
+```bash
+curl http://127.0.0.1:8000/v1/salud
+```
+
+## Probar
+
+```bash
+source .venv/bin/activate
+ruff check . && ruff format --check .
+pytest -q
+```
+
+Los tests no necesitan `.env`: usan su propio token de fixture.
+
+## Más información
+
+- [AGENTS.md](AGENTS.md): estructura, reglas de negocio y convención de commits.
+- [.agents/skills/probar-riel/SKILL.md](.agents/skills/probar-riel/SKILL.md): cómo probar la app de
+  punta a punta.
