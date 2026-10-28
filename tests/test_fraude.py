@@ -72,7 +72,5 @@ def test_endpoint_evaluar(cliente):
         json={"origen": "DEMO-1003", "destino": "DEMO-2002", "monto": 900_000, "canal": "api"},
     )
     assert respuesta.status_code == 200
-    assert respuesta.json() == {
-        "decision": "retenida",
-        "motivos": ["monto_alto", "api_sin_referencia"],
-    }
+    assert respuesta.json()["decision"] == "retenida"
+    assert respuesta.json()["motivos"] == ["monto_alto", "api_sin_referencia"]

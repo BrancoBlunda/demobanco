@@ -1,7 +1,17 @@
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
 from riel.main import create_app
+
+TOKEN_DE_FIXTURE = "token-de-fixture-solo-para-tests"
+
+
+@pytest.fixture(autouse=True)
+def token_listas(monkeypatch):
+    monkeypatch.setenv("LISTAS_API_TOKEN", TOKEN_DE_FIXTURE)
+    monkeypatch.delenv("RIEL_URL_INTERNA", raising=False)
+    return TOKEN_DE_FIXTURE
 
 
 @pytest.fixture
@@ -11,7 +21,9 @@ def ruta_base(tmp_path):
 
 @pytest.fixture
 def cliente(ruta_base):
-    with TestClient(create_app(ruta_base)) as cliente:
+    app = create_app(ruta_base)
+    with TestClient(app) as cliente:
+        app.state.transporte_interno = httpx.ASGITransport(app=app)
         yield cliente
 
 
