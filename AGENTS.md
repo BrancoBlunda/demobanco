@@ -8,6 +8,9 @@ los datos no son reales y no es un banco real.
 ```
 riel/            paquete de la app (un solo proceso FastAPI)
   main.py        create_app(): monta las APIs y la página estática
+  base.py        SQLite local (archivo RIEL_DB, por defecto riel.db)
+  semilla.py     cuentas DEMO que se cargan al arrancar si la base está vacía
+  libro.py       GET /v1/cuentas y POST /v1/libro/asientos (interna)
 tests/           tests de pytest
 .agents/skills/  skills del repo (probar-riel: cómo probar de punta a punta)
 ```
@@ -46,6 +49,13 @@ operación ya hecha y no debita de nuevo.
 Rechazos, sin pasar por fraude (estado `rechazada`): sin origen, sin destino, misma cuenta, monto
 no entero, monto menor o igual a 0, monto mayor a 50000000, moneda distinta de `ARS`, canal fuera
 de `home_banking`, `api` y `sucursal`, y `sucursal` sin referencia.
+
+Libro: un asiento debita el origen y acredita el destino en una sola transacción. Si el origen no
+tiene saldo suficiente, responde 409 `saldo_insuficiente` y no mueve saldos (guarda de demo: evita
+saldos negativos).
+
+Semilla: al arrancar, si la base está vacía, se cargan las cuentas DEMO-1001, DEMO-1002,
+DEMO-1003, DEMO-2001, DEMO-2002 y DEMO-9001 (titulares ficticios).
 
 Bitácora: guarda solo los últimos 4 caracteres de origen y de destino.
 
