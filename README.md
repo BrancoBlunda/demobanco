@@ -19,7 +19,9 @@ pip install -e ".[dev]"
 cp .env.example .env
 ```
 
-`.env` es local y no se versiona. Completá `LISTAS_API_TOKEN` con un valor que elijas vos.
+`.env` es local y no se versiona. Completá `LISTAS_API_TOKEN` con un valor que elijas vos. La API
+de listas exige ese token y fraude lo envía; si falta, listas responde 401 y toda transferencia
+queda retenida con motivo `listas_no_disponible`.
 
 ## Correr
 
@@ -28,11 +30,26 @@ source .venv/bin/activate
 uvicorn riel.main:app --env-file .env --port 8000
 ```
 
+Los datos viven en un archivo SQLite local (`riel.db`, o el que indique `RIEL_DB`). Al arrancar,
+si la base está vacía, se cargan seis cuentas DEMO con titulares ficticios. Para volver a la
+semilla, frená la app y borrá `riel.db`.
+
 Chequeo de salud:
 
 ```bash
 curl http://127.0.0.1:8000/v1/salud
 ```
+
+Transferencia de ejemplo:
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/v1/pagos/transferencias \
+  -H 'Content-Type: application/json' \
+  -d '{"origen":"DEMO-1001","destino":"DEMO-2001","monto":80000,"canal":"home_banking",
+       "referencia":"Factura 0001","clave_idempotencia":"ejemplo-1"}'
+```
+
+La documentación interactiva de las APIs está en `http://127.0.0.1:8000/docs`.
 
 ## Probar
 
