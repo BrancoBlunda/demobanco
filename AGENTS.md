@@ -11,6 +11,8 @@ riel/            paquete de la app (un solo proceso FastAPI)
   base.py        SQLite local (archivo RIEL_DB, por defecto riel.db)
   semilla.py     cuentas DEMO que se cargan al arrancar si la base está vacía
   libro.py       GET /v1/cuentas y POST /v1/libro/asientos (interna)
+  config.py      constantes de negocio (UMBRAL_MONTO_ALTO, MONTO_MAXIMO, MONEDA, CANALES)
+  fraude.py      reglas de fraude y POST /v1/fraude/evaluar (interna)
 tests/           tests de pytest
 .agents/skills/  skills del repo (probar-riel: cómo probar de punta a punta)
 ```
@@ -35,9 +37,10 @@ Montos en pesos enteros.
 
 Fraude (cualquier motivo retiene la transferencia: no se debita ni se acredita, estado `retenida`):
 
-- Monto mayor o igual a `UMBRAL_MONTO_ALTO` (500000): motivo `monto_alto`. El umbral vive en un
-  solo lugar y no se cambia.
-- Canal `api` sin referencia: motivo `api_sin_referencia`.
+- Monto mayor o igual a `UMBRAL_MONTO_ALTO` (500000): motivo `monto_alto`. El umbral vive solo en
+  `riel/config.py` y no se cambia.
+- Canal `api` sin referencia (ausente, vacía o solo espacios): motivo `api_sin_referencia`.
+- Fraude evalúa todas las reglas y devuelve todos los motivos que apliquen.
 - Destino presente en la API de listas: motivo `destino_observado`.
 - Si la API de listas responde 401 (token faltante o distinto): motivo `listas_no_disponible`.
 
