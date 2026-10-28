@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Riel · banco ficticio de demostración</title>
+<style>
+  :root {
+    --fondo: #0b1020; --panel: #121a2e; --panel-2: #18223a; --borde: #26314d;
+    --texto: #e6ebf5; --tenue: #8b95ad; --acento: #60a5fa;
+    --ok: #22c55e; --retenida: #ef4444; --omitido: #6b7280; --pendiente: #33405f;
+    --salto-ms: 700ms;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--fondo); color: var(--texto);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    display: flex; align-items: baseline; gap: 16px; padding: 16px 24px;
+    border-bottom: 1px solid var(--borde);
+  }
+  header h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
+  header p { margin: 0; color: var(--tenue); }
+  .aviso {
+    margin-left: auto; padding: 4px 10px; border: 1px solid #a16207; border-radius: 999px;
+    color: #fbbf24; font-size: 12px;
+  }
+  main { display: grid; grid-template-columns: 300px 1fr; gap: 20px; padding: 20px 24px; }
+  .panel { background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; }
+  .panel h2 { margin: 0 0 12px; font-size: 15px; color: var(--tenue); font-weight: 600; }
+  form label { display: block; margin: 10px 0 4px; color: var(--tenue); font-size: 12px; }
+  select, input {
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--borde);
+    background: var(--panel-2); color: var(--texto); font: inherit;
+  }
+  .botones { display: grid; gap: 8px; margin-top: 16px; }
+  button {
+    padding: 10px; border: 0; border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer;
+    background: var(--acento); color: #0b1020;
+  }
+  button.secundario { background: transparent; color: var(--texto); border: 1px solid var(--acento); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .escenario { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  #estado-actual { min-height: 22px; color: var(--tenue); }
+  #estado-actual strong { color: var(--texto); }
+  .riel { position: relative; padding: 24px 0 12px; }
+  .columnas { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); }
+  .linea {
+    position: absolute; top: 50px; left: 10%; right: 10%; height: 3px;
+    background: var(--borde); border-radius: 2px;
+  }
+  .columna { position: relative; text-align: center; }
+  .columna .titulo { font-weight: 600; margin-bottom: 14px; }
+  .nodo {
+    position: relative; z-index: 1; width: 22px; height: 22px; margin: 0 auto;
+    border-radius: 50%; background: var(--panel); border: 3px solid var(--pendiente);
+    transition: border-color .2s, background .2s;
+  }
+  .columna .detalle { margin-top: 10px; color: var(--tenue); font-size: 12px; min-height: 18px; }
+  .columna[data-estado="ok"] .nodo { border-color: var(--ok); background: #14532d; }
+  .columna[data-estado="retenida"] .nodo,
+  .columna[data-estado="rechazada"] .nodo { border-color: var(--retenida); background: #7f1d1d; }
+  .columna[data-estado="omitido"] .nodo { border-color: var(--omitido); background: #1f2937; }
+  .columna[data-estado="omitido"] .titulo { color: var(--omitido); }
+  .columna.activa .titulo { color: var(--acento); }
+  #viajero {
+    position: absolute; z-index: 2; top: 34px; left: 0; width: 34px; height: 34px;
+    border-radius: 50%; background: var(--acento); opacity: 0;
+    box-shadow: 0 0 18px var(--acento);
+    transition: transform var(--salto-ms) ease-in-out, background .2s, box-shadow .2s, opacity .2s;
+  }
+  #viajero[data-estado="ok"] { background: var(--ok); box-shadow: 0 0 18px var(--ok); }
+  #viajero[data-estado="retenida"],
+  #viajero[data-estado="rechazada"] { background: var(--retenida); box-shadow: 0 0 22px var(--retenida); }
+  #viajero[data-estado="omitido"] { background: var(--omitido); box-shadow: none; }
+  .zona-tarjeta { position: relative; min-height: 210px; }
+  #tarjeta {
+    position: absolute; top: 0; width: 320px; background: var(--panel-2);
+    border: 1px solid var(--borde); border-radius: 10px; padding: 12px; display: none;
+    transition: left var(--salto-ms) ease-in-out;
+  }
+  #tarjeta.visible { display: block; }
+  #tarjeta::before {
+    content: ""; position: absolute; top: -7px; left: var(--flecha, 50%); width: 12px; height: 12px;
+    background: var(--panel-2); border-left: 1px solid var(--borde); border-top: 1px solid var(--borde);
+    transform: translateX(-50%) rotate(45deg);
+  }
+  #tarjeta .cabecera { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  #tarjeta .api { font-weight: 600; }
+  .metodo { font: 600 12px ui-monospace, monospace; color: var(--acento); }
+  .path { font: 12px ui-monospace, monospace; word-break: break-all; }
+  .status {
+    margin-left: auto; padding: 2px 8px; border-radius: 999px; font: 600 12px ui-monospace, monospace;
+    background: #1e293b;
+  }
+  .status.s2 { color: var(--ok); } .status.s4, .status.s5 { color: var(--retenida); }
+  #tarjeta pre {
+    margin: 8px 0 0; max-height: 130px; overflow: auto; padding: 8px; border-radius: 6px;
+    background: #0b1222; font: 11.5px/1.4 ui-monospace, monospace; white-space: pre-wrap;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--borde); }
+  th { color: var(--tenue); font-weight: 500; font-size: 12px; }
+  td.monto { text-align: right; font-variant-numeric: tabular-nums; }
+  .chip {
+    display: inline-block; padding: 1px 8px; margin: 1px 2px; border-radius: 999px;
+    font-size: 12px; background: #1e293b;
+  }
+  .estado-posteada { color: var(--ok); } .estado-retenida, .estado-rechazada { color: var(--retenida); }
+  .cuentas { margin-top: 18px; font-size: 12px; color: var(--tenue); }
+  .cuentas div { display: flex; justify-content: space-between; padding: 2px 0; }
+  .cuentas span:last-child { color: var(--texto); font-variant-numeric: tabular-nums; }
+  .ultimas { grid-column: 1 / -1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Riel</h1>
+  <p>Cómo viaja una transferencia entre APIs</p>
+  <span class="aviso">Datos de demostración · no es un banco real</span>
+</header>
+<main>
+  <aside class="panel">
+    <h2>Nueva transferencia</h2>
+    <form id="formulario">
+      <label for="origen">Origen</label>
+      <select id="origen" name="origen"></select>
+      <label for="destino">Destino</label>
+      <select id="destino" name="destino"></select>
+      <label for="monto">Monto (pesos enteros)</label>
+      <input id="monto" name="monto" inputmode="numeric" value="80000" autocomplete="off">
+      <label for="canal">Canal</label>
+      <select id="canal" name="canal">
+        <option value="home_banking">home_banking</option>
+        <option value="api">api</option>
+        <option value="sucursal">sucursal</option>
+      </select>
+      <label for="referencia">Referencia</label>
+      <input id="referencia" name="referencia" value="Factura 0001" autocomplete="off">
+      <div class="botones">
+        <button type="submit" id="transferir">Transferir</button>
+        <button type="button" id="tanda" class="secundario">Simular tanda</button>
+      </div>
+    </form>
+    <div class="cuentas" id="cuentas"></div>
+  </aside>
+
+  <section class="escenario panel">
+    <div id="estado-actual" aria-live="polite">Elegí una transferencia y tocá Transferir.</div>
+    <div class="riel" id="riel">
+      <div class="columnas" id="columnas">
+        <div class="linea"></div>
+        <div class="columna" data-nodo="origen"><div class="titulo">Origen</div><div class="nodo"></div><div class="detalle"></div></div>
+        <div class="columna" data-nodo="api_pagos"><div class="titulo">API Pagos</div><div class="nodo"></div><div class="detalle"></div></div>
+        <div class="columna" data-nodo="fraude"><div class="titulo">Fraude</div><div class="nodo"></div><div class="detalle"></div></div>
+        <div class="columna" data-nodo="libro"><div class="titulo">Libro</div><div class="nodo"></div><div class="detalle"></div></div>
+        <div class="columna" data-nodo="destino"><div class="titulo">Destino</div><div class="nodo"></div><div class="detalle"></div></div>
+        <div id="viajero" aria-hidden="true"></div>
+      </div>
+    </div>
+    <div class="zona-tarjeta" id="zona-tarjeta">
+      <div id="tarjeta" role="region" aria-label="Llamada HTTP del salto activo">
+        <div class="cabecera"><span class="api" id="tarjeta-api"></span><span class="status" id="tarjeta-status"></span></div>
+        <div><span class="metodo" id="tarjeta-metodo"></span> <span class="path" id="tarjeta-path"></span></div>
+        <pre id="tarjeta-json"></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel ultimas">
+    <h2>Últimas transferencias</h2>
+    <table>
+      <thead><tr><th>Hora</th><th>ID</th><th>Origen → Destino</th><th>Canal</th><th style="text-align:right">Monto</th><th>Estado</th><th>Motivos</th></tr></thead>
+      <tbody id="ultimas"></tbody>
+    </table>
+  </section>
+</main>
+
+<script>
+const SALTO_MS = 700;
+const PAUSA_ENTRE_TANDA_MS = 1400;
+const NOMBRES = { origen: "Origen", api_pagos: "API Pagos", fraude: "Fraude", libro: "Libro", destino: "Destino" };
+const pesos = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+const $ = (id) => document.getElementById(id);
+const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+let ocupado = false;
+
+function nuevaClave(prefijo) {
+  return `${prefijo}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function tandaDefinida() {
+  const id = nuevaClave("tanda");
+  const primera = { origen: "DEMO-1001", destino: "DEMO-2001", monto: 80000, canal: "home_banking", referencia: "Factura 0001", clave_idempotencia: `${id}-1` };
+  return [
+    { titulo: "80000 que se postea", cuerpo: primera },
+    { titulo: "900000 retenida por monto_alto", cuerpo: { origen: "DEMO-1003", destino: "DEMO-2002", monto: 900000, canal: "home_banking", referencia: "Honorarios", clave_idempotencia: `${id}-2` } },
+    { titulo: "api sin referencia", cuerpo: { origen: "DEMO-1002", destino: "DEMO-2001", monto: 25000, canal: "api", referencia: "", clave_idempotencia: `${id}-3` } },
+    { titulo: "reintento con la misma clave", cuerpo: { ...primera } },
+    { titulo: "hacia DEMO-9001, destino_observado", cuerpo: { origen: "DEMO-1002", destino: "DEMO-9001", monto: 30000, canal: "home_banking", referencia: "Pago", clave_idempotencia: `${id}-5` } },
+    { titulo: "rechazada, misma cuenta", cuerpo: { origen: "DEMO-2002", destino: "DEMO-2002", monto: 10000, canal: "home_banking", referencia: "Propia", clave_idempotencia: `${id}-6` } },
+  ];
+}
+
+async function pedirJSON(url, opciones) {
+  const respuesta = await fetch(url, opciones);
+  return { status: respuesta.status, cuerpo: await respuesta.json() };
+}
+
+async function cargarCuentas() {
+  const { cuerpo } = await pedirJSON("/v1/cuentas");
+  for (const id of ["origen", "destino"]) {
+    const select = $(id);
+    const previo = select.value;
+    select.innerHTML = "";
+    for (const c of cuerpo.cuentas) {
+      select.add(new Option(`${c.id} · ${c.titular}`, c.id));
+    }
+    select.value = previo || (id === "origen" ? "DEMO-1001" : "DEMO-2001");
+  }
+  $("cuentas").innerHTML = cuerpo.cuentas
+    .map((c) => `<div><span>${c.id} ${escapar(c.titular)}</span><span data-cuenta="${c.id}">${pesos.format(c.saldo)}</span></div>`)
+    .join("");
+}
+
+function escapar(texto) {
+  return String(texto ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
+}
+
+async function cargarUltimas() {
+  const { cuerpo } = await pedirJSON("/v1/transferencias");
+  $("ultimas").innerHTML = cuerpo.transferencias.map((t) => `
+    <tr data-id="${t.id}">
+      <td>${new Date(t.creada).toLocaleTimeString("es-AR")}</td>
+      <td>${t.id}</td>
+      <td>${escapar(t.origen ?? "—")} → ${escapar(t.destino ?? "—")}</td>
+      <td>${escapar(t.canal ?? "—")}</td>
+      <td class="monto">${t.monto == null ? "—" : pesos.format(t.monto)}</td>
+      <td class="estado-${t.estado}">${t.estado}</td>
+      <td>${t.motivos.map((m) => `<span class="chip">${escapar(m)}</span>`).join("") || "—"}</td>
+    </tr>`).join("");
+}
+
+function columnas() {
+  return [...document.querySelectorAll(".columna")];
+}
+
+function centroDe(columna) {
+  const caja = $("columnas").getBoundingClientRect();
+  const nodo = columna.querySelector(".nodo").getBoundingClientRect();
+  return nodo.left + nodo.width / 2 - caja.left;
+}
+
+function moverViajero(indice) {
+  const viajero = $("viajero");
+  viajero.style.transform = `translateX(${centroDe(columnas()[indice]) - viajero.offsetWidth / 2}px)`;
+}
+
+function reiniciarRiel() {
+  for (const columna of columnas()) {
+    delete columna.dataset.estado;
+    columna.classList.remove("activa");
+    columna.querySelector(".detalle").textContent = "";
+  }
+  const viajero = $("viajero");
+  viajero.style.transition = "none";
+  delete viajero.dataset.estado;
+  viajero.style.opacity = "1";
+  moverViajero(0);
+  viajero.getBoundingClientRect();
+  viajero.style.transition = "";
+  $("tarjeta").classList.remove("visible");
+}
+
+function mostrarTarjeta(indice, salto) {
+  const tarjeta = $("tarjeta");
+  const zona = $("zona-tarjeta").getBoundingClientRect();
+  const centro = centroDe(columnas()[indice]);
+  const ancho = 320;
+  const izquierda = Math.max(0, Math.min(centro - ancho / 2, zona.width - ancho));
+  tarjeta.style.left = `${izquierda}px`;
+  tarjeta.style.setProperty("--flecha", `${centro - izquierda}px`);
+  $("tarjeta-api").textContent = NOMBRES[salto.nodo];
+  $("tarjeta-metodo").textContent = salto.metodo;
+  $("tarjeta-path").textContent = salto.path;
+  const status = $("tarjeta-status");
+  status.textContent = salto.status ?? "—";
+  status.className = `status s${String(salto.status ?? "")[0] ?? ""}`;
+  $("tarjeta-json").textContent = JSON.stringify(salto.recorte, null, 2);
+  tarjeta.dataset.nodo = salto.nodo;
+  tarjeta.classList.add("visible");
+}
+
+async function animar(traza) {
+  reiniciarRiel();
+  const lista = columnas();
+  for (const [indice, salto] of traza.saltos.entries()) {
+    if (salto.estado === "omitido") {
+      lista[indice].dataset.estado = "omitido";
+      lista[indice].querySelector(".detalle").textContent = "omitido";
+      continue;
+    }
+    lista.forEach((c) => c.classList.remove("activa"));
+    lista[indice].classList.add("activa");
+    if (indice > 0) {
+      moverViajero(indice);
+      await esperar(SALTO_MS);
+    }
+    $("viajero").dataset.estado = salto.estado;
+    lista[indice].dataset.estado = salto.estado;
+    lista[indice].querySelector(".detalle").textContent = salto.status ? `${salto.status} · ${salto.estado}` : salto.estado;
+    mostrarTarjeta(indice, salto);
+    if (indice === 0) await esperar(SALTO_MS);
+  }
+}
+
+async function transferir(cuerpo, etiqueta = "") {
+  $("estado-actual").innerHTML = `${etiqueta}Enviando <strong>POST /v1/pagos/transferencias</strong>…`;
+  const { status, cuerpo: respuesta } = await pedirJSON("/v1/pagos/transferencias", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cuerpo),
+  });
+  if (!respuesta.id) {
+    $("estado-actual").textContent = `${etiqueta}Error ${status}: ${JSON.stringify(respuesta)}`;
+    return null;
+  }
+  const { cuerpo: traza } = await pedirJSON(respuesta.traza);
+  await animar(traza);
+  const motivos = respuesta.motivos.length ? ` · motivos: ${respuesta.motivos.join(", ")}` : "";
+  const reintento = respuesta.reintento ? " · reintento: misma clave, no se volvió a debitar" : "";
+  $("estado-actual").innerHTML =
+    `${etiqueta}<strong>${respuesta.id}</strong> · HTTP ${status} · <span class="estado-${respuesta.estado}">${respuesta.estado}</span>${escapar(motivos)}${reintento}`;
+  document.body.dataset.ultimoEstado = respuesta.estado;
+  await Promise.all([cargarCuentas(), cargarUltimas()]);
+  return respuesta;
+}
+
+function leerMonto(texto) {
+  const limpio = texto.trim();
+  if (limpio === "") return null;
+  const numero = Number(limpio);
+  return Number.isNaN(numero) ? limpio : numero;
+}
+
+function llenarFormulario(cuerpo) {
+  $("origen").value = cuerpo.origen;
+  $("destino").value = cuerpo.destino;
+  $("monto").value = cuerpo.monto;
+  $("canal").value = cuerpo.canal;
+  $("referencia").value = cuerpo.referencia;
+}
+
+function bloquear(valor) {
+  ocupado = valor;
+  $("transferir").disabled = valor;
+  $("tanda").disabled = valor;
+  document.body.dataset.ocupado = valor ? "si" : "no";
+}
+
+$("formulario").addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  if (ocupado) return;
+  bloquear(true);
+  try {
+    await transferir({
+      origen: $("origen").value,
+      destino: $("destino").value,
+      monto: leerMonto($("monto").value),
+      canal: $("canal").value,
+      referencia: $("referencia").value,
+      clave_idempotencia: nuevaClave("ui"),
+    });
+  } finally {
+    bloquear(false);
+  }
+});
+
+$("tanda").addEventListener("click", async () => {
+  if (ocupado) return;
+  bloquear(true);
+  document.body.dataset.tanda = "corriendo";
+  try {
+    const tanda = tandaDefinida();
+    for (const [indice, paso] of tanda.entries()) {
+      llenarFormulario(paso.cuerpo);
+      await transferir(paso.cuerpo, `Tanda ${indice + 1}/${tanda.length} (${paso.titulo}) · `);
+      if (indice < tanda.length - 1) await esperar(PAUSA_ENTRE_TANDA_MS);
+    }
+    document.body.dataset.tanda = "terminada";
+  } finally {
+    bloquear(false);
+  }
+});
+
+window.addEventListener("resize", () => {
+  const activa = columnas().findIndex((c) => c.classList.contains("activa"));
+  if (activa >= 0) moverViajero(activa);
+});
+
+cargarCuentas();
+cargarUltimas();
+</script>
+</body>
+</html>
