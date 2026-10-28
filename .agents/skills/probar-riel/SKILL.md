@@ -74,3 +74,34 @@ en `retenida` y `libro`, `destino` en `omitido`. En el log de uvicorn se ven las
 reales: `GET /v1/listas/observadas`, `POST /v1/fraude/evaluar`, `POST /v1/libro/asientos`.
 
 Para volver a la semilla: frená uvicorn y borrá `riel.db` (o usá `RIEL_DB=/tmp/riel.db`).
+
+## 8. Pantalla y animación
+
+Con la app levantada (paso 3, con `LISTAS_API_TOKEN` exportado y una base nueva, por ejemplo
+`RIEL_DB=/tmp/riel-ui.db`), abrí `http://127.0.0.1:8000/` en el navegador.
+
+Qué comprobar:
+
+1. Fondo oscuro, textos en español y el aviso "Datos de demostración · no es un banco real".
+2. Cinco columnas en fila unidas por una línea: Origen, API Pagos, Fraude, Libro, Destino.
+3. A la izquierda: selectores de origen y destino con las seis cuentas DEMO, monto, canal,
+   referencia, y los botones Transferir y Simular tanda.
+4. Transferir con los valores por defecto (DEMO-1001 → DEMO-2001, 80000, home_banking): el círculo
+   viaja de columna en columna (unos 700 ms por salto), todas quedan verdes y debajo de la columna
+   activa aparece la tarjeta con método, path, status y JSON corto. El saldo de DEMO-1001 baja.
+5. Simular tanda: seis transferencias en serie, cada una se anima antes de empezar la siguiente
+   (el texto de estado dice "Tanda n/6"):
+   1. 80000 → `posteada`, cinco saltos verdes.
+   2. 900000 → `retenida` por `monto_alto`: el círculo se frena rojo en Fraude; Libro y Destino
+      grises.
+   3. canal api sin referencia → `retenida` por `api_sin_referencia`, frena en Fraude.
+   4. reintento con la misma clave que la 1 → HTTP 200, "reintento: misma clave, no se volvió a
+      debitar"; el saldo de DEMO-1001 no cambia respecto de después de la 1.
+   5. hacia DEMO-9001 → `retenida` por `destino_observado`, frena en Fraude.
+   6. DEMO-2002 → DEMO-2002 → `rechazada` (`misma_cuenta`): el círculo se frena rojo en API Pagos;
+      Fraude, Libro y Destino grises.
+6. Abajo, "Últimas transferencias" lista cada una con estado, monto y motivos (el reintento no
+   agrega fila nueva).
+7. Al terminar la tanda, `document.body.dataset.tanda === "terminada"`.
+
+Grabá la tanda completa como evidencia para el PR.
