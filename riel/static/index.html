@@ -303,15 +303,12 @@ async function animar(traza) {
     }
     lista.forEach((c) => c.classList.remove("activa"));
     lista[indice].classList.add("activa");
-    if (indice > 0) {
-      moverViajero(indice);
-      await esperar(SALTO_MS);
-    }
+    mostrarTarjeta(indice, salto);
+    if (indice > 0) moverViajero(indice);
+    await esperar(SALTO_MS);
     $("viajero").dataset.estado = salto.estado;
     lista[indice].dataset.estado = salto.estado;
     lista[indice].querySelector(".detalle").textContent = salto.status ? `${salto.status} · ${salto.estado}` : salto.estado;
-    mostrarTarjeta(indice, salto);
-    if (indice === 0) await esperar(SALTO_MS);
   }
 }
 
