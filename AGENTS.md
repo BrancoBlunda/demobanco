@@ -17,6 +17,7 @@ riel/            paquete de la app (un solo proceso FastAPI)
   interno.py     cliente HTTP entre APIs del mismo proceso
   pagos.py       POST /v1/pagos/transferencias, GET .../{id}/traza, GET /v1/transferencias
   bitacora.py    bitácora de eventos (solo últimos 4 caracteres de cada cuenta)
+  static/        index.html: la pantalla (HTML, CSS y JS sin build), servida en GET /
 tests/           tests de pytest
 .agents/skills/  skills del repo (probar-riel: cómo probar de punta a punta)
 ```

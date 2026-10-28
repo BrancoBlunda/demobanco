@@ -34,6 +34,10 @@ Los datos viven en un archivo SQLite local (`riel.db`, o el que indique `RIEL_DB
 si la base está vacía, se cargan seis cuentas DEMO con titulares ficticios. Para volver a la
 semilla, frená la app y borrá `riel.db`.
 
+Abrí `http://127.0.0.1:8000/` para ver la pantalla: elegí origen, destino, monto, canal y
+referencia y tocá **Transferir**, o tocá **Simular tanda** para ver seis transferencias de ejemplo
+(posteada, retenidas, reintento y rechazada).
+
 Chequeo de salud:
 
 ```bash
