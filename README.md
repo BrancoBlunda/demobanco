@@ -19,7 +19,9 @@ pip install -e ".[dev]"
 cp .env.example .env
 ```
 
-`.env` es local y no se versiona. Completá `LISTAS_API_TOKEN` con un valor que elijas vos.
+`.env` es local y no se versiona. Completá `LISTAS_API_TOKEN` con un valor que elijas vos. La API
+de listas exige ese token y fraude lo envía; si falta, listas responde 401 y toda transferencia
+queda retenida con motivo `listas_no_disponible`.
 
 ## Correr
 

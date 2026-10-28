@@ -12,7 +12,9 @@ riel/            paquete de la app (un solo proceso FastAPI)
   semilla.py     cuentas DEMO que se cargan al arrancar si la base está vacía
   libro.py       GET /v1/cuentas y POST /v1/libro/asientos (interna)
   config.py      constantes de negocio (UMBRAL_MONTO_ALTO, MONTO_MAXIMO, MONEDA, CANALES)
-  fraude.py      reglas de fraude y POST /v1/fraude/evaluar (interna)
+  fraude.py      reglas de fraude y POST /v1/fraude/evaluar (interna); consulta listas por HTTP
+  listas.py      GET /v1/listas/observadas (interna, exige Bearer LISTAS_API_TOKEN)
+  interno.py     cliente HTTP entre APIs del mismo proceso
 tests/           tests de pytest
 .agents/skills/  skills del repo (probar-riel: cómo probar de punta a punta)
 ```
@@ -21,6 +23,11 @@ Un solo proceso Python. FastAPI sirve las APIs de pagos, fraude, libro y listas,
 estática. Aunque vivan en el mismo proceso, las llamadas entre APIs son HTTP de verdad (método,
 path y status), porque la pantalla las muestra. Sin login, sin base externa, sin microservicios
 separados, sin machine learning.
+
+Llamadas internas: `interno.cliente_interno(request)` apunta al mismo servidor uvicorn usando la
+dirección local de la conexión (`scope["server"]`), o a `RIEL_URL_INTERNA` si está definida. Los
+tests inyectan `app.state.transporte_interno = httpx.ASGITransport(app)`; `tests/test_http_real.py`
+levanta uvicorn de verdad para cubrir la red.
 
 ## Comandos
 
