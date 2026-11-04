@@ -75,7 +75,17 @@ reales: `GET /v1/listas/observadas`, `POST /v1/fraude/evaluar`, `POST /v1/libro/
 
 Para volver a la semilla: frená uvicorn y borrá `riel.db` (o usá `RIEL_DB=/tmp/riel.db`).
 
-## 8. Pantalla y animación
+## 8. Reporte mensual de compliance
+
+```bash
+curl -s http://127.0.0.1:8000/v1/compliance/reporte-mensual
+# {"mes":"2026-11","desde":"2026-11-01T00:00:00-03:00","hasta":"2026-12-01T00:00:00-03:00",
+#  "moneda":"ARS","cantidad":1,"total":80000}
+```
+
+Solo suman las `posteada`. `?mes=2026-13` responde 422 `mes_invalido`.
+
+## 9. Pantalla y animación
 
 Con la app levantada (paso 3, con `LISTAS_API_TOKEN` exportado y una base nueva, por ejemplo
 `RIEL_DB=/tmp/riel-ui.db`), abrí `http://127.0.0.1:8000/` en el navegador.
@@ -103,5 +113,8 @@ Qué comprobar:
 6. Abajo, "Últimas transferencias" lista cada una con estado, monto y motivos (el reintento no
    agrega fila nueva).
 7. Al terminar la tanda, `document.body.dataset.tanda === "terminada"`.
+8. Debajo de los saldos, "Reporte mensual de compliance" muestra el mes actual (por ejemplo
+   "noviembre de 2026") y, con una base nueva, $ 80.000 y "1 transferencia posteada": solo la
+   posteada suma; las retenidas, la rechazada y el reintento no.
 
 Grabá la tanda completa como evidencia para el PR.

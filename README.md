@@ -36,7 +36,8 @@ semilla, frená la app y borrá `riel.db`.
 
 Abrí `http://127.0.0.1:8000/` para ver la pantalla: elegí origen, destino, monto, canal y
 referencia y tocá **Transferir**, o tocá **Simular tanda** para ver seis transferencias de ejemplo
-(posteada, retenidas, reintento y rechazada).
+(posteada, retenidas, reintento y rechazada). Debajo de los saldos, el **reporte mensual de
+compliance** muestra el mes y el total en pesos de las transferencias posteadas.
 
 Chequeo de salud:
 
@@ -51,6 +52,12 @@ curl -s -X POST http://127.0.0.1:8000/v1/pagos/transferencias \
   -H 'Content-Type: application/json' \
   -d '{"origen":"DEMO-1001","destino":"DEMO-2001","monto":80000,"canal":"home_banking",
        "referencia":"Factura 0001","clave_idempotencia":"ejemplo-1"}'
+```
+
+Reporte mensual de compliance (solo transferencias posteadas, mes en hora de Argentina):
+
+```bash
+curl -s 'http://127.0.0.1:8000/v1/compliance/reporte-mensual?mes=2026-11'
 ```
 
 La documentación interactiva de las APIs está en `http://127.0.0.1:8000/docs`.
