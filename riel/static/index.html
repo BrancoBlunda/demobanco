@@ -112,6 +112,11 @@
   .cuentas div { display: flex; justify-content: space-between; padding: 2px 0; }
   .cuentas span:last-child { color: var(--texto); font-variant-numeric: tabular-nums; }
   .ultimas { grid-column: 1 / -1; }
+  .compliance { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--borde); }
+  .compliance h2 { margin-bottom: 6px; }
+  #compliance-mes { color: var(--tenue); }
+  #compliance-total { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  #compliance-cantidad { color: var(--tenue); font-size: 12px; }
 </style>
 </head>
 <body>
@@ -144,6 +149,12 @@
       </div>
     </form>
     <div class="cuentas" id="cuentas"></div>
+    <div class="compliance" id="compliance">
+      <h2>Reporte mensual de compliance</h2>
+      <div id="compliance-mes">—</div>
+      <div id="compliance-total">—</div>
+      <div id="compliance-cantidad">Solo transferencias posteadas</div>
+    </div>
   </aside>
 
   <section class="escenario panel">
@@ -182,6 +193,7 @@ const SALTO_MS = 700;
 const PAUSA_ENTRE_TANDA_MS = 1400;
 const NOMBRES = { origen: "Origen", api_pagos: "API Pagos", fraude: "Fraude", libro: "Libro", destino: "Destino" };
 const pesos = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+const nombreMes = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric", timeZone: "UTC" });
 const $ = (id) => document.getElementById(id);
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 let ocupado = false;
@@ -240,6 +252,14 @@ async function cargarUltimas() {
       <td class="estado-${t.estado}">${t.estado}</td>
       <td>${t.motivos.map((m) => `<span class="chip">${escapar(m)}</span>`).join("") || "—"}</td>
     </tr>`).join("");
+}
+
+async function cargarCompliance() {
+  const { cuerpo } = await pedirJSON("/v1/compliance/reporte-mensual");
+  $("compliance-mes").textContent = nombreMes.format(new Date(`${cuerpo.mes}-01T12:00:00Z`));
+  $("compliance-total").textContent = pesos.format(cuerpo.total);
+  $("compliance-cantidad").textContent =
+    `${cuerpo.cantidad} ${cuerpo.cantidad === 1 ? "transferencia posteada" : "transferencias posteadas"}`;
 }
 
 function columnas() {
@@ -330,7 +350,7 @@ async function transferir(cuerpo, etiqueta = "") {
   $("estado-actual").innerHTML =
     `${etiqueta}<strong>${respuesta.id}</strong> · HTTP ${status} · <span class="estado-${respuesta.estado}">${respuesta.estado}</span>${escapar(motivos)}${reintento}`;
   document.body.dataset.ultimoEstado = respuesta.estado;
-  await Promise.all([cargarCuentas(), cargarUltimas()]);
+  await Promise.all([cargarCuentas(), cargarUltimas(), cargarCompliance()]);
   return respuesta;
 }
 
@@ -398,6 +418,7 @@ window.addEventListener("resize", () => {
 
 cargarCuentas();
 cargarUltimas();
+cargarCompliance();
 </script>
 </body>
 </html>

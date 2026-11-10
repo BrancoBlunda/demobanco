@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
-from riel import fraude, libro, listas, pagos
+from riel import compliance, fraude, libro, listas, pagos
 from riel.base import Base
 from riel.semilla import sembrar_si_vacia
 
@@ -40,6 +40,7 @@ def create_app(ruta_base: str | None = None) -> FastAPI:
     app.include_router(fraude.router)
     app.include_router(listas.router)
     app.include_router(pagos.router)
+    app.include_router(compliance.router)
     return app
 
 

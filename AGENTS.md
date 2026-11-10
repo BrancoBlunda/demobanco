@@ -11,12 +11,13 @@ riel/            paquete de la app (un solo proceso FastAPI)
   base.py        SQLite local (archivo RIEL_DB, por defecto riel.db)
   semilla.py     cuentas DEMO que se cargan al arrancar si la base está vacía
   libro.py       GET /v1/cuentas y POST /v1/libro/asientos (interna)
-  config.py      constantes de negocio (UMBRAL_MONTO_ALTO, MONTO_MAXIMO, MONEDA, CANALES)
+  config.py      constantes de negocio (UMBRAL_MONTO_ALTO, MONTO_MAXIMO, MONEDA, CANALES, ZONA_HORARIA)
   fraude.py      reglas de fraude y POST /v1/fraude/evaluar (interna); consulta listas por HTTP
   listas.py      GET /v1/listas/observadas (interna, exige Bearer LISTAS_API_TOKEN)
   interno.py     cliente HTTP entre APIs del mismo proceso
   pagos.py       POST /v1/pagos/transferencias, GET .../{id}/traza, GET /v1/transferencias
   bitacora.py    bitácora de eventos (solo últimos 4 caracteres de cada cuenta)
+  compliance.py  GET /v1/compliance/reporte-mensual: total posteado del mes
   static/        index.html: la pantalla (HTML, CSS y JS sin build), servida en GET /
 tests/           tests de pytest
 .agents/skills/  skills del repo (probar-riel: cómo probar de punta a punta)
@@ -81,6 +82,13 @@ Traza: saltos en orden `origen`, `api_pagos`, `fraude`, `libro`, `destino`. Cada
 `recorte`. Si fraude retiene, `libro` y `destino` quedan `omitido`.
 
 Bitácora: guarda solo los últimos 4 caracteres de origen y de destino.
+
+Reporte mensual de compliance (`GET /v1/compliance/reporte-mensual?mes=YYYY-MM`, por defecto el
+mes actual): suma solo las transferencias `posteada` cuya fecha de creación cae en el mes calendario,
+todos los días de lunes a domingo, en hora de `ZONA_HORARIA` (Argentina). Las `procesando`
+(pendientes), `retenida` y `rechazada` no entran; un reintento no suma porque no crea fila. Devuelve
+`mes`, `desde`, `hasta`, `moneda`, `cantidad` y `total`. Un `mes` inválido responde 422
+`mes_invalido`.
 
 Listas: exige `Authorization: Bearer <LISTAS_API_TOKEN>`, leído del entorno. Nunca escribas el
 token en el código, en el README ni en los tests (los tests usan un token de fixture).
