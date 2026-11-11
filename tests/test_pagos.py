@@ -1,5 +1,6 @@
 import json
 
+import httpx
 import pytest
 
 from riel import config
@@ -183,6 +184,20 @@ def test_traza_retenida_omite_libro_y_destino(cliente):
     assert saltos[2]["recorte"] == {"decision": "retenida", "motivos": ["destino_observado"]}
     assert saltos[3]["status"] is None and saltos[3]["recorte"] is None
     assert saltos[4]["status"] is None and saltos[4]["recorte"] is None
+
+
+def test_fraude_no_disponible_retiene_sin_mover_saldos(cliente):
+    cliente.app.state.transporte_interno = httpx.MockTransport(lambda request: httpx.Response(503))
+    antes = saldos(cliente)
+    respuesta = transferir(cliente)
+    assert respuesta.status_code == 202
+    assert respuesta.json()["estado"] == "retenida"
+    assert respuesta.json()["motivos"] == ["fraude_no_disponible"]
+    assert saldos(cliente) == antes
+    saltos = traza(cliente, respuesta.json()["id"])["saltos"]
+    assert [s["estado"] for s in saltos] == ["ok", "ok", "retenida", "omitido", "omitido"]
+    assert saltos[2]["nodo"] == "fraude"
+    assert saltos[2]["status"] == 503
 
 
 def test_traza_inexistente_404(cliente):
