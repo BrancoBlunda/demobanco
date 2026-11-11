@@ -1,5 +1,6 @@
 import json
 
+import httpx
 import pytest
 
 from riel import config
@@ -63,6 +64,28 @@ def test_listas_sin_token_retiene_por_listas_no_disponible(cliente, monkeypatch)
     assert respuesta.json()["estado"] == "retenida"
     assert respuesta.json()["motivos"] == ["listas_no_disponible"]
     assert saldos(cliente) == antes
+
+
+def test_fraude_no_disponible_retiene_sin_mover_saldos(cliente):
+    asgi = httpx.ASGITransport(app=cliente.app)
+
+    async def fraude_caido(request):
+        if request.method == "POST" and request.url.path == "/v1/fraude/evaluar":
+            return httpx.Response(503, json={"error": "fraude_caido"})
+        return await asgi.handle_async_request(request)
+
+    cliente.app.state.transporte_interno = httpx.MockTransport(fraude_caido)
+    antes = saldos(cliente)
+    respuesta = transferir(cliente)
+    assert respuesta.status_code == 202
+    cuerpo = respuesta.json()
+    assert cuerpo["estado"] == "retenida"
+    assert cuerpo["motivos"] == ["fraude_no_disponible"]
+    assert saldos(cliente) == antes
+    assert estados(cliente, cuerpo["id"]) == ["ok", "ok", "retenida", "omitido", "omitido"]
+    fraude = traza(cliente, cuerpo["id"])["saltos"][2]
+    assert fraude["nodo"] == "fraude"
+    assert fraude["status"] == 503
 
 
 @pytest.mark.parametrize(
