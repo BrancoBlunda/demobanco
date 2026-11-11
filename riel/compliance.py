@@ -35,20 +35,27 @@ def _utc(momento: datetime) -> str:
     return momento.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 
+def _en_dia_habil(creada: str) -> bool:
+    # Los fines de semana se consolidan el lunes y no entran en este corte.
+    momento = datetime.fromisoformat(creada.replace("Z", "+00:00"))
+    return momento.astimezone(ZoneInfo(ZONA_HORARIA)).weekday() < 5
+
+
 def reporte_mensual(base: Base, anio: int, mes: int) -> dict:
     desde, hasta = rango_del_mes(anio, mes)
-    fila = base.consultar(
-        "SELECT COUNT(*) AS cantidad, COALESCE(SUM(monto), 0) AS total FROM transferencias"
+    filas = base.consultar(
+        "SELECT monto, creada FROM transferencias"
         " WHERE estado = 'posteada' AND creada >= ? AND creada < ?",
         (_utc(desde), _utc(hasta)),
-    )[0]
+    )
+    incluidas = [fila for fila in filas if _en_dia_habil(fila["creada"])]
     return {
         "mes": f"{anio:04d}-{mes:02d}",
         "desde": desde.isoformat(),
         "hasta": hasta.isoformat(),
         "moneda": MONEDA,
-        "cantidad": fila["cantidad"],
-        "total": fila["total"],
+        "cantidad": len(incluidas),
+        "total": sum(fila["monto"] for fila in incluidas),
     }
 
 
