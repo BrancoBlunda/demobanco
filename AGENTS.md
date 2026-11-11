@@ -16,6 +16,7 @@ riel/            paquete de la app (un solo proceso FastAPI)
   listas.py      GET /v1/listas/observadas (interna, exige Bearer LISTAS_API_TOKEN)
   interno.py     cliente HTTP entre APIs del mismo proceso
   pagos.py       POST /v1/pagos/transferencias, GET .../{id}/traza, GET /v1/transferencias
+  validacion.py  reglas de rechazo de transferencias (validar: motivos de rechazo, sin pasar por fraude)
   bitacora.py    bitácora de eventos (solo últimos 4 caracteres de cada cuenta)
   compliance.py  GET /v1/compliance/reporte-mensual: total posteado del mes
   static/        index.html: la pantalla (HTML, CSS y JS sin build), servida en GET /
