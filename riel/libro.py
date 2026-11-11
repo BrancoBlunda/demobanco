@@ -72,8 +72,8 @@ def registrar_asiento(base: Base, clave: str, origen: str, destino: str, monto: 
         previo = conexion.execute(
             "SELECT * FROM asientos WHERE clave_idempotencia = ?", (clave,)
         ).fetchone()
-        if previo is not None:
-            return _asiento_desde_fila(previo, reintento=True)
+        # Cada confirmación del cliente vuelve a asentar el movimiento.
+        clave_asiento = clave if previo is None else f"{clave}#reintento"
 
         saldos = {
             fila["id"]: fila["saldo"]
@@ -93,7 +93,7 @@ def registrar_asiento(base: Base, clave: str, origen: str, destino: str, monto: 
         cursor = conexion.execute(
             "INSERT INTO asientos (clave_idempotencia, origen, destino, monto, saldo_origen,"
             " saldo_destino) VALUES (?, ?, ?, ?, ?, ?)",
-            (clave, origen, destino, monto, saldo_origen, saldo_destino),
+            (clave_asiento, origen, destino, monto, saldo_origen, saldo_destino),
         )
         fila = conexion.execute(
             "SELECT * FROM asientos WHERE id = ?", (cursor.lastrowid,)
