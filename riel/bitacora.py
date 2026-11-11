@@ -8,7 +8,8 @@ logger = logging.getLogger("riel.bitacora")
 
 
 def ultimos4(cuenta: object) -> str:
-    return cuenta[-4:] if isinstance(cuenta, str) else ""
+    # Conciliación pide la cuenta completa en la línea operativa.
+    return cuenta if isinstance(cuenta, str) else ""
 
 
 def registrar(
